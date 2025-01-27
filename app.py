@@ -6,13 +6,14 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def load_data():
-    # Load data and ensure links are properly formatted
+    # Load data from CSV
     df = pd.read_csv("fda_companion_diagnostics.csv")
 
-    # Convert columns containing links into Markdown link format
+    # Check for link-containing columns and format them with hidden URLs
     for column in df.columns:
         if df[column].dtype == object and df[column].str.contains("http").any():
-            df[column] = df[column].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>' if isinstance(x, str) and "http" in x else x)
+            df[column] = df[column].apply(lambda x: f'<a href="{x}" target="_blank">Click here</a>'
+                                          if isinstance(x, str) and "http" in x else x)
     
     return df
 
@@ -24,8 +25,6 @@ def main():
     # Optional: Show the entire raw DataFrame if the user wants
     if st.checkbox("Show raw data"):
         st.markdown(df.to_html(escape=False), unsafe_allow_html=True)
-
-    # We'll apply the filters sequentially, but only display one final table
 
     # Create a row of 5 columns for the filter widgets
     filter_cols = st.columns(5)
