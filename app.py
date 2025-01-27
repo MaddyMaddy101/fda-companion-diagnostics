@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 # Set the Streamlit page layout to wide to use full screen width
 st.set_page_config(layout="wide")
@@ -9,12 +10,18 @@ def load_data():
     # Load data from CSV
     df = pd.read_csv("fda_companion_diagnostics.csv")
 
-    # Check for link-containing columns and format them with hidden URLs
-    for column in df.columns:
-        if df[column].dtype == object and df[column].str.contains("http").any():
-            df[column] = df[column].apply(lambda x: f'<a href="{x}" target="_blank">Click here</a>'
-                                          if isinstance(x, str) and "http" in x else x)
-    
+    # Function to extract short name and format links
+    def format_link(cell_value):
+        if isinstance(cell_value, str) and '(' in cell_value and 'http' in cell_value:
+            match = re.match(r'(.+?)\s?\((http[s]?://[^\)]+)\)', cell_value)
+            if match:
+                short_name, url = match.groups()
+                return f'<a href="{url}" target="_blank">{short_name}</a>'
+        return cell_value
+
+    # Apply formatting to all cells that may contain links
+    df = df.applymap(format_link)
+
     return df
 
 def main():
