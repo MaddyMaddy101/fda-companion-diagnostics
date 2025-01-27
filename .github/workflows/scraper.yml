@@ -54,6 +54,6 @@ jobs:
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
         subject: "FDA Data Update Alert!"
-        to: "hewenjuan201@gmail.com"
+        to: "he.wenjuan@gene.com"
         from: "GitHub Actions"
         body: "Changes detected in FDA data. The CSV file has been updated."
