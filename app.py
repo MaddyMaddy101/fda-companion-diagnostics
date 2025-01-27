@@ -6,8 +6,15 @@ st.set_page_config(layout="wide")
 
 @st.cache_data
 def load_data():
-    # Replace this with your actual data or CSV
-    return pd.read_csv("fda_companion_diagnostics.csv")
+    # Load data and ensure links are properly formatted
+    df = pd.read_csv("fda_companion_diagnostics.csv")
+
+    # Convert columns containing links into Markdown link format
+    for column in df.columns:
+        if df[column].dtype == object and df[column].str.contains("http").any():
+            df[column] = df[column].apply(lambda x: f'<a href="{x}" target="_blank">{x}</a>' if isinstance(x, str) and "http" in x else x)
+    
+    return df
 
 def main():
     st.title("Multi-Column Filter with One Result Table (Wide Layout)")
@@ -16,7 +23,7 @@ def main():
 
     # Optional: Show the entire raw DataFrame if the user wants
     if st.checkbox("Show raw data"):
-        st.dataframe(df, use_container_width=True)
+        st.markdown(df.to_html(escape=False), unsafe_allow_html=True)
 
     # We'll apply the filters sequentially, but only display one final table
 
@@ -25,7 +32,6 @@ def main():
 
     # Step 1: Let each column pick which DataFrame column to filter on
     # Step 2: Let user enter a search term
-    # We'll store these in lists so we can iterate and apply them
     selected_columns = []
     search_terms = []
 
@@ -47,21 +53,20 @@ def main():
             selected_columns.append(col)
             search_terms.append(query)
 
-    # Now apply all 5 filters to get a final DataFrame
+    # Apply filters to get a final DataFrame
     filtered_df = df.copy()
 
     for col_name, term in zip(selected_columns, search_terms):
         if col_name != "(None)" and term:
-            # Filter rows where 'col_name' contains 'term' (case-insensitive)
             filtered_df = filtered_df[
                 filtered_df[col_name].str.contains(term, case=False, na=False)
             ]
 
-    # Display one final table with the combined results
+    # Display one final table with rendered links
     st.markdown("---")
     st.subheader("Filtered Results")
     st.write(f"Showing {len(filtered_df)} records after all filters:")
-    st.dataframe(filtered_df, use_container_width=True)
+    st.markdown(filtered_df.to_html(escape=False), unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
