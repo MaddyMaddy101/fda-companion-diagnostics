@@ -1,4 +1,4 @@
-name: Daily Scraper
+name: Daily Scraper with Email Notification
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  run-scraper:
+  scrape-and-notify:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,12 +23,37 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run scraper script
-      run: python scrape_fda.py
+      run: python scrape.py
 
-    - name: Commit and push CSV
+    - name: Check for changes
+      id: check_changes
+      run: |
+        if git diff --exit-code --quiet fda_companion_diagnostics.csv; then
+          echo "No changes detected"
+          echo "CHANGES=false" >> $GITHUB_ENV
+        else
+          echo "Changes detected!"
+          echo "CHANGES=true" >> $GITHUB_ENV
+        fi
+
+    - name: Commit and push if changes found
+      if: env.CHANGES == 'true'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add fda_companion_diagnostics.csv
         git commit -m "Updated FDA data"
         git push
+
+    - name: Send Email Notification
+      if: env.CHANGES == 'true'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 587
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "FDA Data Update Alert!"
+        to: "hewenjuan201@gmail.com"
+        from: "GitHub Actions"
+        body: "Changes detected in FDA data. The CSV file has been updated."
