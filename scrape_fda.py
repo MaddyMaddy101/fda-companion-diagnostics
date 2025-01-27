@@ -1,5 +1,3 @@
-# scrape_fda.py
-
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -20,8 +18,6 @@ def scrape_fda_table():
     soup = BeautifulSoup(response.text, "html.parser")
 
     # 3. Locate the specific table
-    #    If there's only one main table, soup.find("table") might suffice.
-    #    Otherwise, refine with attributes like ID/class if needed.
     table = soup.find("table")
 
     # 4. Extract table headers
@@ -31,7 +27,17 @@ def scrape_fda_table():
     rows = []
     for tr in table.find("tbody").find_all("tr"):
         cols = tr.find_all(["td", "th"])
-        row_data = [col.get_text(strip=True) for col in cols]
+        row_data = []
+
+        for col in cols:
+            link = col.find("a")  # Check if there's a link in the cell
+            if link and link.get("href"):
+                # Combine text with link to store both in the cell
+                cell_content = f'{col.get_text(strip=True)} ({link["href"]})'
+            else:
+                cell_content = col.get_text(strip=True)
+            row_data.append(cell_content)
+
         rows.append(row_data)
 
     # 6. Create a pandas DataFrame
@@ -44,3 +50,4 @@ if __name__ == "__main__":
     print(df.head())  # For debugging
     # Save to CSV or do additional processing
     df.to_csv("fda_companion_diagnostics.csv", index=False)
+
