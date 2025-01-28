@@ -25,7 +25,7 @@ def load_data():
     return df
 
 def main():
-    st.title("Multi-Column Filter with One Result Table (Wide Layout)")
+    st.title("Multi-Column Filter with Sorting (Wide Layout)")
 
     df = load_data()
 
@@ -59,18 +59,31 @@ def main():
             selected_columns.append(col)
             search_terms.append(query)
 
-    # Apply filters to get a final DataFrame
+    # Apply filters to get a filtered DataFrame
     filtered_df = df.copy()
-
     for col_name, term in zip(selected_columns, search_terms):
         if col_name != "(None)" and term:
             filtered_df = filtered_df[
                 filtered_df[col_name].str.contains(term, case=False, na=False)
             ]
 
-    # Display one final table with rendered links
+    # Sorting Dropdowns
     st.markdown("---")
-    st.subheader("Filtered Results")
+    st.subheader("Sorting Options")
+    sort_column = st.selectbox("Select a column to sort by:", df_columns, key="sort_column")
+    sort_order = st.radio("Select sort order:", ("Ascending", "Descending"), key="sort_order")
+
+    # Apply sorting
+    if sort_column:
+        filtered_df = filtered_df.sort_values(
+            by=sort_column,
+            ascending=(sort_order == "Ascending"),
+            ignore_index=True
+        )
+
+    # Display the final table with rendered links
+    st.markdown("---")
+    st.subheader("Filtered and Sorted Results")
     st.write(f"Showing {len(filtered_df)} records after all filters:")
     st.markdown(filtered_df.to_html(escape=False), unsafe_allow_html=True)
 
